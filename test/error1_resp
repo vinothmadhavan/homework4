@@ -1,0 +1,66 @@
+The error message indicates that the model size for `cnn_planner` exceeds the allowed limit of 20 MB. This is likely due to the architecture of your CNN model, which may have too many parameters. Here are a few strategies to reduce the model size:
+
+1. **Reduce the Number of Filters**: Decrease the number of filters in each convolutional layer. For example, you can change the number of filters from 32, 64, 128, 256 to smaller numbers like 16, 32, 64, 128.
+
+2. **Reduce the Number of Layers**: Consider reducing the number of convolutional layers. Each layer adds parameters, so fewer layers will reduce the model size.
+
+3. **Use Smaller Fully Connected Layers**: The fully connected layers at the end of the network can have a large number of parameters. You can reduce the size of these layers or even remove one if possible.
+
+4. **Use Depthwise Separable Convolutions**: If your framework supports it, you can replace standard convolutions with depthwise separable convolutions, which reduce the number of parameters significantly.
+
+5. **Prune the Model**: Pruning involves removing weights that contribute less to the model's predictions. This can be done after training to reduce the model size.
+
+6. **Quantization**: If supported, quantize the model to use lower precision (e.g., 16-bit or 8-bit) for weights and activations.
+
+Here's an example of how you might modify the CNN architecture to reduce its size:
+
+```python
+class CNNPlanner(torch.nn.Module):
+    def __init__(self, n_waypoints: int = 3):
+        super().__init__()
+
+        self.n_waypoints = n_waypoints
+
+        # Normalization parameters
+        self.register_buffer("input_mean", torch.as_tensor([0.485, 0.456, 0.406]), persistent=False)
+        self.register_buffer("input_std", torch.as_tensor([0.229, 0.224, 0.225]), persistent=False)
+
+        # Define the CNN backbone with fewer filters
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+        )
+
+        # Define the fully connected layers with fewer parameters
+        self.fc_layers = nn.Sequential(
+            nn.Linear(64 * 6 * 8, 256),  # Adjust the size based on the output of conv layers
+            nn.ReLU(),
+            nn.Linear(256, n_waypoints * 2)
+        )
+
+    def forward(self, image: torch.Tensor, **kwargs) -> torch.Tensor:
+        # Normalize the input image
+        x = (image - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
+
+        # Pass through the CNN layers
+        x = self.conv_layers(x)
+
+        # Flatten the output from the conv layers
+        x = x.view(x.size(0), -1)
+
+        # Pass through the fully connected layers
+        x = self.fc_layers(x)
+
+        # Reshape to (b, n_waypoints, 2)
+        waypoints = x.view(-1, self.n_waypoints, 2)
+
+        return waypoints
+```
+
+After making these changes, check the model size again to ensure it is within the allowed limit. Adjust the architecture further if necessary.
+
+
