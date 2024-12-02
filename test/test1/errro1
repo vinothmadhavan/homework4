@@ -1,0 +1,10 @@
+PS C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4> python -m homework.train_planner --model_name cnn_planner
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 169, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 95, in train
+    train_data = load_data("drive_data/train", shuffle=True, batch_size=batch_size, num_workers=2, input_type="image")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: load_data() got an unexpected keyword argument 'input_type'
