@@ -1,0 +1,63 @@
+The error you're encountering is due to a mismatch in the dimensions of the input to the fully connected layers in your `CNNPlanner` model. Specifically, the output from the convolutional layers is not being flattened to the expected size before being passed to the fully connected layers.
+
+To resolve this issue, you need to ensure that the output from the convolutional layers is correctly flattened to match the input size expected by the first fully connected layer. Here's how you can fix it:
+
+1. **Calculate the correct input size for the first fully connected layer**: This depends on the output size of the convolutional layers. You can determine this by passing a dummy input through the convolutional layers and checking the output shape.
+
+2. **Adjust the input size of the first fully connected layer**: Use the calculated size to set the input size of the first fully connected layer.
+
+Here's how you can modify your `CNNPlanner` class to fix the issue:
+
+```python
+class CNNPlanner(torch.nn.Module):
+    def __init__(self, n_waypoints: int = 3):
+        super().__init__()
+
+        self.n_waypoints = n_waypoints
+
+        # Normalization parameters
+        self.register_buffer("input_mean", torch.as_tensor([0.485, 0.456, 0.406]), persistent=False)
+        self.register_buffer("input_std", torch.as_tensor([0.229, 0.224, 0.225]), persistent=False)
+
+        # Define the CNN backbone with fewer filters
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+        )
+
+        # Calculate the size of the flattened feature map
+        dummy_input = torch.zeros(1, 3, 96, 128)  # Batch size of 1, with the same dimensions as your input images
+        dummy_output = self.conv_layers(dummy_input)
+        flattened_size = dummy_output.view(1, -1).size(1)
+
+        # Define the fully connected layers with fewer parameters
+        self.fc_layers = nn.Sequential(
+            nn.Linear(flattened_size, 256),  # Use the calculated flattened size
+            nn.ReLU(),
+            nn.Linear(256, n_waypoints * 2)
+        )
+
+    def forward(self, image: torch.Tensor, **kwargs) -> torch.Tensor:
+        # Normalize the input image
+        x = (image - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
+
+        # Pass through the CNN layers
+        x = self.conv_layers(x)
+
+        # Flatten the output from the conv layers
+        x = x.view(x.size(0), -1)
+
+        # Pass through the fully connected layers
+        x = self.fc_layers(x)
+
+        # Reshape to (b, n_waypoints, 2)
+        waypoints = x.view(-1, self.n_waypoints, 2)
+
+        return waypoints
+```
+
+In this code, a dummy input is used to calculate the size of the flattened feature map after the convolutional layers. This size is then used to define the input size of the first fully connected layer, ensuring that the dimensions match correctly.
