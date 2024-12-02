@@ -64,3 +64,86 @@ class CNNPlanner(torch.nn.Module):
 After making these changes, check the model size again to ensure it is within the allowed limit. Adjust the architecture further if necessary.
 
 
+
+==================================================================
+
+
+
+The error you're encountering is due to the fact that the variable `nhead` is not defined in your `TransformerPlanner` class. The `nhead` parameter is required by the `nn.TransformerDecoderLayer` to specify the number of attention heads in the multi-head attention mechanism.
+
+To fix this issue, you need to define `nhead` as a parameter in the `__init__` method of your `TransformerPlanner` class. Here's how you can modify your code:
+
+```python
+class TransformerPlanner(nn.Module):
+    def __init__(
+        self,
+        n_track: int = 10,
+        n_waypoints: int = 3,
+        d_model: int = 64,
+        nhead: int = 8,  # Add nhead parameter
+        num_layers: int = 6,  # Add num_layers parameter for the number of decoder layers
+    ):
+        super().__init__()
+
+        self.n_track = n_track
+        self.n_waypoints = n_waypoints
+        self.d_model = d_model
+
+        # Embedding for the query (waypoints)
+        self.query_embed = nn.Embedding(n_waypoints, d_model)
+
+        # Linear layer to project input features to d_model
+        self.input_proj = nn.Linear(4, d_model)  # 4 because we concatenate left and right (2+2)
+
+        # Transformer decoder
+        decoder_layer = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead)
+        self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
+
+        # Output layer to project back to 2D waypoints
+        self.output_proj = nn.Linear(d_model, 2)
+
+    def forward(
+        self,
+        track_left: torch.Tensor,
+        track_right: torch.Tensor,
+        **kwargs,
+    ) -> torch.Tensor:
+        """
+        Predicts waypoints from the left and right boundaries of the track.
+
+        During test time, your model will be called with
+        model(track_left=..., track_right=...), so keep the function signature as is.
+
+        Args:
+            track_left (torch.Tensor): shape (b, n_track, 2)
+            track_right (torch.Tensor): shape (b, n_track, 2)
+
+        Returns:
+            torch.Tensor: future waypoints with shape (b, n_waypoints, 2)
+        """
+
+        # Concatenate the left and right track boundaries
+        x = torch.cat((track_left, track_right), dim=2)  # Shape: (b, n_track, 4)
+
+        # Project input to d_model
+        x = self.input_proj(x)  # Shape: (b, n_track, d_model)
+
+        # Prepare the query embeddings
+        query_embed = self.query_embed.weight.unsqueeze(1).repeat(1, x.size(0), 1)  # Shape: (n_waypoints, b, d_model)
+
+        # Transpose x to match the expected input shape for the transformer (n_track, b, d_model)
+        x = x.permute(1, 0, 2)
+
+        # Pass through the transformer decoder
+        tgt = self.transformer_decoder(query_embed, x)  # Shape: (n_waypoints, b, d_model)
+
+        # Transpose back to (b, n_waypoints, d_model)
+        tgt = tgt.permute(1, 0, 2)
+
+        # Project to 2D waypoints
+        waypoints = self.output_proj(tgt)  # Shape: (b, n_waypoints, 2)
+
+        return waypoints
+```
+
+In this updated code, I've added `nhead` and `num_layers` as parameters to the `__init__` method of the `TransformerPlanner` class. You can adjust these parameters as needed for your specific use case.
