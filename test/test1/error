@@ -1,0 +1,39 @@
+oss: 2367.6266
+Epoch 4/10, Loss: 2360.6117
+Epoch 5/10, Loss: 2360.9067
+Epoch 6/10, Loss: 2349.5818
+Epoch 7/10, Loss: 2350.7303
+Epoch 8/10, Loss: 2348.4286
+Epoch 9/10, Loss: 2335.4757
+Epoch 10/10, Loss: 2336.2673
+Model saved to logs\transformer_planner_1202_182920\transformer_planner.th
+PS C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4> python -m homework.train_planner --model_name cnn_planner
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 84, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 24, in train
+    model = load_model(model_name)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\models.py", line 356, in load_model
+    raise AssertionError(f"{model_name} is too large: {model_size_mb:.2f} MB")
+AssertionError: cnn_planner is too large: 25.50 MB
+PS C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4> python -m homework.train_planner --model_name cnn_planner
+Loaded 8000 samples from 16 episodes
+Loaded 2000 samples from 4 episodes
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 84, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 44, in train
+    predicted_waypoints = model(track_left=track_left, track_right=track_right)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1562, in _call_impl      
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: CNNPlanner.forward() missing 1 required positional argument: 'image'
