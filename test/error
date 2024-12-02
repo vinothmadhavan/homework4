@@ -10,3 +10,20 @@ Traceback (most recent call last):
     depth = batch['depth'].to(device)
             ~~~~~^^^^^^^^^
 KeyError: 'depth'
+
+
+
+
+
+from .datasets.road_dataset import load_data
+
+# Load a small portion of the dataset
+train_data = load_data("drive_data/train", shuffle=True, batch_size=1, num_workers=0)
+
+# Iterate over the dataset and print the first few samples
+for i, batch in enumerate(train_data):
+    print(f"Sample {i}:")
+    for key, value in batch.items():
+        print(f"  {key}: {value.shape if isinstance(value, torch.Tensor) else type(value)}")
+    if i >= 5:  # Print only the first 5 samples
+        break
