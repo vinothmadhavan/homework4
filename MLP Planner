@@ -1,0 +1,73 @@
+To implement the `MLPPlanner` class, we need to define a multi-layer perceptron (MLP) that takes the concatenated left and right track boundary points as input and outputs the predicted waypoints. Here's how you can complete the code:
+
+```python
+import torch
+import torch.nn as nn
+
+class MLPPlanner(nn.Module):
+    def __init__(
+        self,
+        n_track: int = 10,
+        n_waypoints: int = 3,
+        hidden_size: int = 128,  # You can adjust the hidden size as needed
+    ):
+        """
+        Args:
+            n_track (int): number of points in each side of the track
+            n_waypoints (int): number of waypoints to predict
+            hidden_size (int): size of the hidden layers
+        """
+        super().__init__()
+
+        self.n_track = n_track
+        self.n_waypoints = n_waypoints
+
+        # Define the MLP layers
+        self.mlp = nn.Sequential(
+            nn.Linear(n_track * 2 * 2, hidden_size),  # Input size is n_track * 2 (for left and right) * 2 (x, y)
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, n_waypoints * 2)  # Output size is n_waypoints * 2 (x, y)
+        )
+
+    def forward(
+        self,
+        track_left: torch.Tensor,
+        track_right: torch.Tensor,
+        **kwargs,
+    ) -> torch.Tensor:
+        """
+        Predicts waypoints from the left and right boundaries of the track.
+
+        During test time, your model will be called with
+        model(track_left=..., track_right=...), so keep the function signature as is.
+
+        Args:
+            track_left (torch.Tensor): shape (b, n_track, 2)
+            track_right (torch.Tensor): shape (b, n_track, 2)
+
+        Returns:
+            torch.Tensor: future waypoints with shape (b, n_waypoints, 2)
+        """
+        # Concatenate the left and right track boundaries
+        x = torch.cat((track_left, track_right), dim=2)  # Shape: (b, n_track, 4)
+
+        # Flatten the input
+        x = x.view(x.size(0), -1)  # Shape: (b, n_track * 4)
+
+        # Pass through the MLP
+        waypoints = self.mlp(x)  # Shape: (b, n_waypoints * 2)
+
+        # Reshape to (b, n_waypoints, 2)
+        waypoints = waypoints.view(-1, self.n_waypoints, 2)
+
+        return waypoints
+```
+
+### Explanation:
+- **Initialization**: The `MLPPlanner` class is initialized with the number of track points (`n_track`), the number of waypoints to predict (`n_waypoints`), and a hidden layer size (`hidden_size`).
+- **MLP Architecture**: The MLP consists of three linear layers with ReLU activations. The input layer size is `n_track * 2 * 2` because we have `n_track` points for both left and right boundaries, each with 2 coordinates (x, y). The output layer size is `n_waypoints * 2` to predict the x and y coordinates of each waypoint.
+- **Forward Method**: The `forward` method concatenates the left and right track boundaries, flattens the input, and passes it through the MLP to predict the waypoints. The output is reshaped to `(b, n_waypoints, 2)`.
+
+This implementation provides a basic MLP for predicting waypoints from track boundaries. You can adjust the hidden layer size and the number of layers to improve performance based on your experiments.
