@@ -1,0 +1,68 @@
+Your implementation of the `MLPPlanner` class looks generally correct, but there are a few areas you might consider adjusting to improve the model's performance, especially in terms of reducing lateral error:
+
+1. **Increase Model Capacity**: 
+   - You might want to experiment with increasing the hidden size or adding more layers to the MLP. This can help the model learn more complex patterns in the data.
+
+2. **Normalization**:
+   - Ensure that your input data (track boundaries) is normalized. This can help the model converge faster and potentially improve performance.
+
+3. **Activation Functions**:
+   - While ReLU is a common choice, you might experiment with other activation functions like LeakyReLU or ELU, which can sometimes provide better performance.
+
+4. **Regularization**:
+   - Add dropout layers between the fully connected layers to help prevent overfitting. This is especially useful if you increase the model's capacity.
+
+5. **Learning Rate and Optimizer**:
+   - Experiment with different learning rates and optimizers. Sometimes, a small change in these can lead to better convergence.
+
+6. **Loss Function**:
+   - Ensure that the loss function you are using during training is appropriate. For regression tasks like this, Mean Squared Error (MSE) is typically used, but you might also try Mean Absolute Error (MAE) to see if it improves performance.
+
+Here's an updated version of your `MLPPlanner` with some of these suggestions:
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MLPPlanner(nn.Module):
+    def __init__(self, n_track: int = 10, n_waypoints: int = 3):
+        super().__init__()
+
+        self.n_track = n_track
+        self.n_waypoints = n_waypoints
+
+        # Define the MLP layers
+        input_size = 2 * n_track * 2
+        hidden_size = 128  # Increased hidden size
+        output_size = n_waypoints * 2
+
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, output_size)
+
+        # Dropout layer for regularization
+        self.dropout = nn.Dropout(p=0.2)
+
+    def forward(self, track_left: torch.Tensor, track_right: torch.Tensor, **kwargs) -> torch.Tensor:
+        batch_size = track_left.size(0)
+        x = torch.cat((track_left, track_right), dim=2)
+        x = x.view(batch_size, -1)
+
+        # Pass through MLP with dropout
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+
+        waypoints = x.view(batch_size, self.n_waypoints, 2)
+        return waypoints
+```
+
+### Additional Tips:
+- **Data Augmentation**: If possible, augment your training data to include variations that the model might encounter in real scenarios.
+- **Early Stopping**: Implement early stopping based on validation loss to prevent overfitting.
+- **Hyperparameter Tuning**: Use techniques like grid search or random search to find the best hyperparameters for your model.
+
+By iterating on these aspects, you should be able to improve the lateral error performance of your MLP Planner model.
