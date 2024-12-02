@@ -1,0 +1,92 @@
+The error you're encountering is because the `load_data` function in your `road_dataset.py` file does not have an `input_type` parameter. To handle different input types (e.g., images for `CNNPlanner` and track boundaries for `MLPPlanner` and `TransformerPlanner`), you should use the `transform_pipeline` parameter that is already present in the `load_data` function.
+
+Here's how you can modify your `train` function to use the `transform_pipeline` parameter to load the appropriate data:
+
+1. **Use the `transform_pipeline` parameter**: Set it to `"default"` for `CNNPlanner` to include images, and `"state_only"` for the other planners to exclude images.
+
+Here's the updated `train` function:
+
+```python
+def train(exp_dir="logs", model_name="mlp_planner", num_epoch=10, lr=1e-3, batch_size=16, seed=2024):
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        print("CUDA not available, using CPU")
+        device = torch.device("cpu")
+
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    log_dir = Path(exp_dir) / f"{model_name}_{datetime.now().strftime('%m%d_%H%M%S')}"
+    logger = tb.SummaryWriter(log_dir)
+
+    model = load_model(model_name)
+    model = model.to(device)
+    model.train()
+
+    # Determine the transform pipeline based on the model type
+    transform_pipeline = "default" if model_name == "cnn_planner" else "state_only"
+
+    train_data = load_data("drive_data/train", shuffle=True, batch_size=batch_size, num_workers=2, transform_pipeline=transform_pipeline)
+    val_data = load_data("drive_data/val", shuffle=False, transform_pipeline=transform_pipeline)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    for epoch in range(num_epoch):
+        model.train()
+        epoch_loss = 0.0
+
+        for batch in train_data:
+            if model_name == "cnn_planner":
+                images = batch['image'].to(device)
+                waypoints = batch['waypoints'].to(device)
+                waypoints_mask = batch['waypoints_mask'].to(device)
+
+                # Forward pass
+                predicted_waypoints = model(image=images)
+            else:
+                track_left = batch['track_left'].to(device)
+                track_right = batch['track_right'].to(device)
+                waypoints = batch['waypoints'].to(device)
+                waypoints_mask = batch['waypoints_mask'].to(device)
+
+                # Forward pass
+                predicted_waypoints = model(track_left=track_left, track_right=track_right)
+
+            # Compute loss (e.g., MSE loss for regression)
+            loss = nn.MSELoss()(predicted_waypoints, waypoints)
+
+            epoch_loss += loss.item()
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        with torch.no_grad():
+            for batch in val_data:
+                if model_name == "cnn_planner":
+                    images = batch['image'].to(device)
+                    waypoints = batch['waypoints'].to(device)
+
+                    predicted_waypoints = model(image=images)
+                else:
+                    track_left = batch['track_left'].to(device)
+                    track_right = batch['track_right'].to(device)
+                    waypoints = batch['waypoints'].to(device)
+
+                    predicted_waypoints = model(track_left=track_left, track_right=track_right)
+
+                # Compute validation metrics if needed
+
+        print(f"Epoch {epoch + 1}/{num_epoch}, Loss: {epoch_loss:.4f}")
+
+        # Log metrics to TensorBoard
+        logger.add_scalar('Loss/train', epoch_loss, epoch)
+
+    save_model(model)
+    torch.save(model.state_dict(), log_dir / f"{model_name}.th")
+    print(f"Model saved to {log_dir / f'{model_name}.th'}")
+```
+
+In this code, the `transform_pipeline` is set based on the model type, ensuring that the correct data is loaded for each model. The `load_data` function is called with this parameter to load the appropriate dataset.
