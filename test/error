@@ -1,0 +1,12 @@
+PS C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4> python -m homework.train_planner --model_name mlp_planner
+Loaded 8000 samples from 16 episodes
+Loaded 2000 samples from 4 episodes
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 102, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 47, in train
+    depth = batch['depth'].to(device)
+            ~~~~~^^^^^^^^^
+KeyError: 'depth'
