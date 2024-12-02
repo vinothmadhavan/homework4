@@ -1,0 +1,71 @@
+To implement the `CNNPlanner` class, we will use a convolutional neural network (CNN) to process the input image and predict the waypoints. The CNN will extract features from the image, and a series of fully connected layers will map these features to the desired waypoints. Here's how you can complete the code:
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class CNNPlanner(torch.nn.Module):
+    def __init__(
+        self,
+        n_waypoints: int = 3,
+    ):
+        super().__init__()
+
+        self.n_waypoints = n_waypoints
+
+        # Normalization parameters
+        self.register_buffer("input_mean", torch.as_tensor([0.485, 0.456, 0.406]), persistent=False)
+        self.register_buffer("input_std", torch.as_tensor([0.229, 0.224, 0.225]), persistent=False)
+
+        # Define the CNN backbone
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(),
+        )
+
+        # Define the fully connected layers
+        self.fc_layers = nn.Sequential(
+            nn.Linear(256 * 6 * 8, 512),  # Adjust the size based on the output of conv layers
+            nn.ReLU(),
+            nn.Linear(512, n_waypoints * 2)
+        )
+
+    def forward(self, image: torch.Tensor, **kwargs) -> torch.Tensor:
+        """
+        Args:
+            image (torch.FloatTensor): shape (b, 3, h, w) and vals in [0, 1]
+
+        Returns:
+            torch.FloatTensor: future waypoints with shape (b, n, 2)
+        """
+        # Normalize the input image
+        x = (image - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
+
+        # Pass through the CNN layers
+        x = self.conv_layers(x)
+
+        # Flatten the output from the conv layers
+        x = x.view(x.size(0), -1)
+
+        # Pass through the fully connected layers
+        x = self.fc_layers(x)
+
+        # Reshape to (b, n_waypoints, 2)
+        waypoints = x.view(-1, self.n_waypoints, 2)
+
+        return waypoints
+```
+
+### Explanation:
+- **Normalization**: The input image is normalized using the mean and standard deviation values typically used for pre-trained models (e.g., ImageNet).
+- **CNN Backbone**: The convolutional layers extract features from the input image. The architecture consists of several convolutional layers with ReLU activations. The stride and padding are set to reduce the spatial dimensions progressively.
+- **Fully Connected Layers**: After flattening the output of the convolutional layers, fully connected layers map the features to the desired waypoints. The final layer outputs a tensor of shape `(B, n_waypoints * 2)`, which is reshaped to `(B, n_waypoints, 2)`.
+
+This implementation provides a basic CNN-based planner. You can experiment with different architectures, such as adding more layers or using different kernel sizes, to improve performance.
