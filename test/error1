@@ -1,0 +1,20 @@
+Loaded 8000 samples from 16 episodes
+Loaded 2000 samples from 4 episodes
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 84, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 44, in train
+    predicted_waypoints = model(track_left=track_left, track_right=track_right)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\nn\modules\module.py", line 1562, in _call_impl      
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\models.py", line 77, in forward
+    x = F.relu(self.fc1(x))
+        ^
+NameError: name 'F' is not defined
