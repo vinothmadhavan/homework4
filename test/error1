@@ -32,3 +32,24 @@ Traceback (most recent call last):
   File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\models.py", line 283, in load_model
     raise AssertionError(f"{model_name} is too large: {model_size_mb:.2f} MB")
 AssertionError: cnn_planner is too large: 25.50 MB
+
+
+
+
+python -m homework.train_planner --model_name transformer_planner
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 84, in <module>
+    train(**vars(parser.parse_args()))
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\train_planner.py", line 24, in train
+    model = load_model(model_name)
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\models.py", line 266, in load_model
+    m = MODEL_FACTORY[model_name](**model_kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\OneDrive\Desktop\MSAI\DL\homework4\homework4\homework\models.py", line 128, in __init__
+    decoder_layer = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead)
+                                                                      ^^^^^
+NameError: name 'nhead' is not defined
+
