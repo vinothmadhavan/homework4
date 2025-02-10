@@ -1,0 +1,184 @@
+1.how many patients are getting admiited by Gender
+2.how many are getting admitted by Gender Admission Type
+3.how many are getting admitted by gender with emergency type by insurance
+4.how many patients are getting admiited by more than once - again by insurance, gender, emergency
+5.how many patients are getting getting admitted to icu who are with insurance and who are without insurance and the lenght of the stay
+6.what are the top services availabed by patients by Insurance
+7.what are the top lab tests availed by patients by gender and insurance types
+8.how many procedures have been availabed by patients who came in emergency and by insurance type
+9.what are the major drugs used for the emergency patients
+10. how many patients were dead who joined in emergency with insurance 
+
+
+
+SELECT COUNT(*) FROM PATIENTS 
+
+how many patients got admitted by Gender
+
+SELECT gender, count(subject_id)
+from
+(
+SELECT case when gender="M" then "Male" else "Female" end as gender, A.subject_id
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+group by gender, A.subject_id
+)
+group by gender
+
+================
+
+
+how many admissions by Gender Admission Type
+
+SELECT case when gender="M" then "Male" else "Female" end as gender, admission_type, count(hadm_id)
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+group by gender, admission_type
+
+
+============================
+
+how many admissions by gender with emergency type by insurance
+
+
+SELECT case when gender="M" then "Male" else "Female" end as gender, insurance, count(hadm_id)
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+where admission_type = "EMERGENCY"
+group by gender, insurance
+
+
+===================================
+
+4.how many patients are getting admiited by more than once - again by insurance, gender, emergency
+
+select gender, insurance, count(subject_id)
+from (
+SELECT case when gender="M" then "Male" else "Female" end as gender, insurance,A.subject_id, count(hadm_id)
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+where admission_type = "EMERGENCY"
+group by gender, insurance, A.subject_id
+having count(hadm_id)>1
+)
+group by gender,insurance
+
+===================================
+
+
+5.how many admissions to icu who are with insurance and who are without insurance and the lenght of the stay
+
+
+SELECT insurance, count(icustay_id), sum(los)
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+INNER JOIN ICUSTAYS as C
+on A.subject_id = C.subject_id and B.hadm_id = C.hadm_id
+where admission_type = "EMERGENCY"
+group by insurance
+
+
+
+===================================
+
+6.what are the top 5 services availabed by admissions by Insurance who joined with emergency
+
+SELECT TOP 5 * 
+FROM
+(
+SELECT insurance,curr_service, count(hadm_id) as CNT
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+INNER JOIN SERVICES as C
+on A.subject_id = C.subject_id and B.hadm_id = C.hadm_id
+where admission_type = "EMERGENCY"
+group by insurance,curr_service
+ORDER BY CNT DESC
+)
+
+
+===================================
+
+7.what are the top lab tests availed by admissions by insurance types
+who joined with emergency
+
+SELECT TOP 5 * 
+FROM
+(
+SELECT insurance,label, count(hadm_id) as CNT
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS as B ON A.subject_id = B.subject_id
+INNER JOIN LABEVENTS as C on A.subject_id = C.subject_id and B.hadm_id = C.hadm_id
+INNER JOIN D_LABITEMS as D on C.itemid = D.itemid
+where admission_type = "EMERGENCY"
+group by insurance,label
+ORDER BY CNT DESC
+)
+
+
+===================================
+
+8.what are the procedures conducted for admissions who came in emergency and by insurance type
+
+
+SELECT TOP 5 * 
+FROM
+(
+SELECT insurance,short_title, count(hadm_id) as CNT
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS as B ON A.subject_id = B.subject_id
+INNER JOIN PROCEDURES_ICD as C on A.subject_id = C.subject_id and B.hadm_id = C.hadm_id
+INNER JOIN D_ICD_PROCEDURES as D on C.icd9_code = D.icd9_code
+where admission_type = "EMERGENCY"
+group by insurance,short_title
+ORDER BY CNT DESC
+)
+
+
+===================================
+
+9.what are the major drugs used for the emergency patients by insurance
+
+SELECT TOP 5 * 
+FROM
+(
+SELECT insurance,drg_code,description, count(hadm_id) as CNT
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+INNER JOIN DRGCODES as C
+on A.subject_id = C.subject_id and B.hadm_id = C.hadm_id
+where admission_type = "EMERGENCY"
+group by insurance,drg_code,description
+ORDER BY CNT DESC
+)
+
+
+
+
+===================================
+
+
+
+10. how many patients were dead who joined in emergency with insurance 
+
+
+SELECT insurance, count(subject_id)
+from
+(
+SELECT insurance, A.subject_id
+FROM PATIENTS AS A
+INNER JOIN ADMISSIONS AS B
+ON A.subject_id = B.subject_id
+where admission_type = "EMERGENCY" and deathtime is not null and deathtime <> ""
+group by insurance, A.subject_id
+)
+group by insurance
+
+
